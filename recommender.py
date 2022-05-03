@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import math
 
 df = pd.read_csv('ratings_small.csv')
 df = pd.DataFrame(df)
@@ -24,9 +25,7 @@ def get_rating(user,movieId,df,movie_data):
         simmilarity_factor.append({"movie":i,"simmilarity":val})
 
     ordered_simmilarity_factor = sorted(simmilarity_factor,key = lambda i:i["simmilarity"],reverse = True ) 
-    ordered_simmilarity_factor
     nearest_neighbor_movies = ordered_simmilarity_factor[1:1+nearest_neighbors]
-    nearest_neighbor_movies
     user_ID = user
 
     new_df = df.query('userId =='+str(user_ID))
@@ -38,28 +37,26 @@ def get_rating(user,movieId,df,movie_data):
         if len(previous_rating) == 0:
             previous_rating = 0
         else:
-            print(previous_rating)
             previous_rating = previous_rating
         rating += i["simmilarity"]*previous_rating
         total_simmilarity += i["simmilarity"]
     rating = rating/total_simmilarity
-
-    return rating
+    return float(rating)
 
 def recommend_movies(user,df,movie_data):
     progress = 0
     ratings = []
     all_movies = df["movieId"]
     user_watched_movies = df.query("userId =="+str(user))["movieId"]
-    for current_movie in all_movies:
+    for current_movie in all_movies[:1000]:
         if current_movie not in user_watched_movies:
             rating = get_rating(user,current_movie,df,movie_data)
-            print(rating)
-            print(str(((progress+1)/len(all_movies))*100)+"%")
             progress +=1
-            ratings.append({"movieId":current_movie,"rating":rating})
+            if not math.isnan(rating):
+                ratings.append({"movieId":current_movie,"rating":rating})
+                print(str(((progress+1)/(len(all_movies)-len(user_watched_movies)))*100)+"%")
     ratings = sorted(ratings, key = lambda i:i["rating"],reverse=True)
-
     return ratings[0:10]
 
-print(recommend_movies(1,df,movie_data))
+print(recommend_movies(5,df,movie_data))
+
